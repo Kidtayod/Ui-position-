@@ -1,0 +1,185 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "ProPositionUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+------------------------------------------------
+-- 🟦 ปุ่ม OPEN (ลากได้)
+------------------------------------------------
+local openButton = Instance.new("TextButton")
+openButton.Size = UDim2.new(0, 120, 0, 40)
+openButton.Position = UDim2.new(0, 10, 0.5, -20)
+openButton.Text = "OPEN UI"
+openButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+openButton.TextColor3 = Color3.fromRGB(255,255,255)
+openButton.Parent = gui
+
+Instance.new("UICorner", openButton).CornerRadius = UDim.new(0, 10)
+
+------------------------------------------------
+-- 🟩 หน้าต่างหลัก
+------------------------------------------------
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 320, 0, 220)
+main.Position = UDim2.new(0.5, -160, 0.5, -110)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+main.Visible = false
+main.Parent = gui
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
+
+------------------------------------------------
+-- 🎯 หัวหน้าต่าง (ลาก UI หลัก)
+------------------------------------------------
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1,0,0,35)
+topBar.BackgroundTransparency = 1
+topBar.Parent = main
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -40, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.Text = "POSITION SYSTEM"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = topBar
+
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -35, 0, 3)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(200,50,50)
+close.TextColor3 = Color3.fromRGB(255,255,255)
+close.Parent = topBar
+Instance.new("UICorner", close)
+
+------------------------------------------------
+-- 📜 Scroll
+------------------------------------------------
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, -20, 1, -50)
+scroll.Position = UDim2.new(0, 10, 0, 40)
+scroll.CanvasSize = UDim2.new(0,0,2,0)
+scroll.ScrollBarThickness = 4
+scroll.BackgroundTransparency = 1
+scroll.Parent = main
+
+local posButton = Instance.new("TextButton")
+posButton.Size = UDim2.new(1, 0, 0, 50)
+posButton.Text = "GET XYZ POSITION"
+posButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+posButton.TextColor3 = Color3.fromRGB(255,255,255)
+posButton.Font = Enum.Font.GothamBold
+posButton.Parent = scroll
+Instance.new("UICorner", posButton)
+
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, 0, 0, 60)
+label.Position = UDim2.new(0, 0, 0, 60)
+label.Text = "X: - | Y: - | Z: -"
+label.TextColor3 = Color3.fromRGB(255,255,255)
+label.BackgroundTransparency = 1
+label.Font = Enum.Font.Gotham
+label.Parent = scroll
+
+------------------------------------------------
+-- 🎛️ เปิด / ปิด UI
+------------------------------------------------
+local open = false
+
+local function toggleUI(state)
+	main.Visible = true
+	local goal = {}
+
+	if state then
+		main.Size = UDim2.new(0, 0, 0, 0)
+		goal.Size = UDim2.new(0, 320, 0, 220)
+	else
+		goal.Size = UDim2.new(0, 0, 0, 0)
+	end
+
+	local tween = TweenService:Create(
+		main,
+		TweenInfo.new(0.25, Enum.EasingStyle.Quad),
+		goal
+	)
+
+	tween:Play()
+
+	if not state then
+		task.wait(0.25)
+		main.Visible = false
+	end
+end
+
+openButton.MouseButton1Click:Connect(function()
+	open = not open
+	toggleUI(open)
+end)
+
+close.MouseButton1Click:Connect(function()
+	open = false
+	toggleUI(false)
+end)
+
+posButton.MouseButton1Click:Connect(function()
+	local char = player.Character
+	if not char then return end
+
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local p = root.Position
+	label.Text = string.format("X: %d | Y: %d | Z: %d",
+		math.floor(p.X),
+		math.floor(p.Y),
+		math.floor(p.Z)
+	)
+end)
+
+------------------------------------------------
+-- 🖱️ ระบบลาก UI (ตัวหลัก)
+------------------------------------------------
+local function makeDraggable(frame, dragPart)
+	local dragging = false
+	local dragStart, startPos
+
+	dragPart.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+		end
+	end)
+
+	dragPart.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+		end
+	end)
+end
+
+-- 🧲 ลากได้ทั้ง 2 อัน
+makeDraggable(main, topBar)
+makeDraggable(openButton, openButton)
