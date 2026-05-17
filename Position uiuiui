@@ -1,0 +1,127 @@
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "PositionUI"
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- หน้าต่างหลัก
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 320, 0, 220)
+frame.Position = UDim2.new(0.5, -160, 0.5, -110)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Parent = gui
+
+Instance.new("UICorner", frame)
+
+-- แถบหัว (ใช้ลาก)
+local top = Instance.new("Frame")
+top.Size = UDim2.new(1,0,0,35)
+top.BackgroundTransparency = 1
+top.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,1,0)
+title.Text = "POSITION SYSTEM"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = top
+
+-- Scroll
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1,-20,1,-45)
+scroll.Position = UDim2.new(0,10,0,40)
+scroll.ScrollBarThickness = 4
+scroll.BackgroundTransparency = 1
+scroll.CanvasSize = UDim2.new(0,0,2,0)
+scroll.Parent = frame
+
+-- ปุ่ม Get Position
+local getBtn = Instance.new("TextButton")
+getBtn.Size = UDim2.new(1,0,0,50)
+getBtn.Text = "GET POSITION"
+getBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+getBtn.TextColor3 = Color3.fromRGB(255,255,255)
+getBtn.Parent = scroll
+Instance.new("UICorner", getBtn)
+
+-- ช่องแสดงค่า (เอาไว้ copy)
+local box = Instance.new("TextBox")
+box.Size = UDim2.new(1,0,0,50)
+box.Position = UDim2.new(0,0,0,60)
+box.Text = "-"
+box.ClearTextOnFocus = false
+box.TextColor3 = Color3.fromRGB(255,255,255)
+box.BackgroundColor3 = Color3.fromRGB(40,40,40)
+box.Parent = scroll
+Instance.new("UICorner", box)
+
+-- ปุ่ม Copy
+local copyBtn = Instance.new("TextButton")
+copyBtn.Size = UDim2.new(1,0,0,45)
+copyBtn.Position = UDim2.new(0,0,0,120)
+copyBtn.Text = "COPY POSITION"
+copyBtn.BackgroundColor3 = Color3.fromRGB(50,200,120)
+copyBtn.TextColor3 = Color3.fromRGB(255,255,255)
+copyBtn.Parent = scroll
+Instance.new("UICorner", copyBtn)
+
+-- ดึงตำแหน่ง
+getBtn.MouseButton1Click:Connect(function()
+	local char = player.Character
+	if not char then return end
+
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local p = root.Position
+	local text = string.format("X: %d | Y: %d | Z: %d",
+		math.floor(p.X),
+		math.floor(p.Y),
+		math.floor(p.Z)
+	)
+
+	box.Text = text
+end)
+
+-- copy (แบบ Roblox ปลอดภัย)
+copyBtn.MouseButton1Click:Connect(function()
+	box:CaptureFocus()
+	box.SelectionStart = 1
+	box.CursorPosition = #box.Text + 1
+end)
+
+-- 🧲 drag UI
+local dragging = false
+local start, startPos
+
+top.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		start = input.Position
+		startPos = frame.Position
+	end
+end)
+
+top.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - start
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
