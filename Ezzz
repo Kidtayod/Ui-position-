@@ -1,0 +1,166 @@
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "PositionUI"
+gui.Parent = player:WaitForChild("PlayerGui")
+
+------------------------------------------------
+-- 🔘 ปุ่มเปิด / ปิด UI (ลากได้)
+------------------------------------------------
+local openBtn = Instance.new("TextButton")
+openBtn.Size = UDim2.new(0, 120, 0, 40)
+openBtn.Position = UDim2.new(0, 10, 0.5, -20)
+openBtn.Text = "OPEN UI"
+openBtn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+openBtn.TextColor3 = Color3.fromRGB(255,255,255)
+openBtn.Parent = gui
+Instance.new("UICorner", openBtn)
+
+------------------------------------------------
+-- 🪟 หน้าต่างหลัก
+------------------------------------------------
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 320, 0, 200)
+frame.Position = UDim2.new(0.5, -160, 0.5, -100)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Visible = false
+frame.Parent = gui
+Instance.new("UICorner", frame)
+
+------------------------------------------------
+-- 🎯 แถบลาก
+------------------------------------------------
+local top = Instance.new("Frame")
+top.Size = UDim2.new(1,0,0,35)
+top.BackgroundTransparency = 1
+top.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,1,0)
+title.Text = "POSITION SYSTEM"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = top
+
+------------------------------------------------
+-- 📜 Scroll
+------------------------------------------------
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1,-20,1,-45)
+scroll.Position = UDim2.new(0,10,0,40)
+scroll.ScrollBarThickness = 4
+scroll.BackgroundTransparency = 1
+scroll.CanvasSize = UDim2.new(0,0,2,0)
+scroll.Parent = frame
+
+------------------------------------------------
+-- 📍 ปุ่ม Get Position
+------------------------------------------------
+local getBtn = Instance.new("TextButton")
+getBtn.Size = UDim2.new(1,0,0,50)
+getBtn.Text = "GET POSITION"
+getBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+getBtn.TextColor3 = Color3.fromRGB(255,255,255)
+getBtn.Parent = scroll
+Instance.new("UICorner", getBtn)
+
+------------------------------------------------
+-- 📦 ช่องแสดงผล (มีแค่ตัวเลข)
+------------------------------------------------
+local box = Instance.new("TextBox")
+box.Size = UDim2.new(1,0,0,50)
+box.Position = UDim2.new(0,0,0,60)
+box.Text = "-"
+box.ClearTextOnFocus = false
+box.TextEditable = false
+box.TextColor3 = Color3.fromRGB(255,255,255)
+box.BackgroundColor3 = Color3.fromRGB(40,40,40)
+box.Font = Enum.Font.Gotham
+box.Parent = scroll
+Instance.new("UICorner", box)
+
+------------------------------------------------
+-- 📋 ปุ่ม Copy
+------------------------------------------------
+local copyBtn = Instance.new("TextButton")
+copyBtn.Size = UDim2.new(1,0,0,45)
+copyBtn.Position = UDim2.new(0,0,0,120)
+copyBtn.Text = "COPY"
+copyBtn.BackgroundColor3 = Color3.fromRGB(50,200,120)
+copyBtn.TextColor3 = Color3.fromRGB(255,255,255)
+copyBtn.Parent = scroll
+Instance.new("UICorner", copyBtn)
+
+------------------------------------------------
+-- 🎛️ เปิด / ปิด UI
+------------------------------------------------
+local open = false
+
+openBtn.MouseButton1Click:Connect(function()
+	open = not open
+	frame.Visible = open
+end)
+
+------------------------------------------------
+-- 📍 Get Position (เฉพาะตัวเลข)
+------------------------------------------------
+getBtn.MouseButton1Click:Connect(function()
+	local char = player.Character
+	if not char then return end
+
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local p = root.Position
+
+	box.Text = tostring(math.floor(p.X)) .. "," ..
+		tostring(math.floor(p.Y)) .. "," ..
+		tostring(math.floor(p.Z))
+end)
+
+------------------------------------------------
+-- 📋 Copy (เลือกแล้วกด copy ได้)
+------------------------------------------------
+copyBtn.MouseButton1Click:Connect(function()
+	box:CaptureFocus()
+	box.SelectionStart = 1
+	box.CursorPosition = #box.Text + 1
+end)
+
+------------------------------------------------
+-- 🧲 ลาก UI ได้
+------------------------------------------------
+local dragging = false
+local dragStart, startPos
+
+top.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
+end)
+
+top.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
